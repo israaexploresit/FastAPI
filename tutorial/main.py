@@ -4,9 +4,9 @@ app = FastAPI()
 
 
 BOOKS = [
-    {'title': 'Atomic Habits', 'author': 'James Clear'},
-    {'title': 'Twisted Love', 'author': 'Ana Huang'},
-    {'title': 'The Midnight Library', 'author': 'Matt Heig'},
+    {'title': 'Atomic Habits', 'author': 'James Clear', 'category': 'life'},
+    {'title': 'Twisted Love', 'author': 'Ana Huang', 'category': 'romance'},
+    {'title': 'The Midnight Library', 'author': 'Matt Heig', 'category': 'fiction'},
 
 ]
 
@@ -16,18 +16,24 @@ def welcome_page():
 
 
 @app.get('/books/')
-def list_books():
+def list_books(category):
+    if category:
+        return list(filter(lambda x: x.get('category') == category, BOOKS))
     return BOOKS
+
 
 """
 Picks up the function that is first ahead
 """
+
+
 @app.get('/books/{book_title}')
-def get_book(book_title):
-    response = list(map(lambda x: {'message': f"{x.get('title')} by {x.get('author')}"}
-                    if x.get('title').casefold() == book_title.casefold()
-                    else None, BOOKS))
-    return list(filter(lambda x: x is not None, response))
+def get_book(book_title, category):
+    response = list(filter(lambda x: x.get('title').casefold() ==
+                           book_title.casefold(), BOOKS))
+    if category:
+        return list(filter(lambda x: x.get('category') == category, response))
+    return response
 
 
 @app.get('/books/The Midnight Library')

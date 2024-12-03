@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from tutorial.models import Book
 from tutorial.validations import ValidateBook
+from tutorial.utils import reform_to_book_class, assign_book_id
 
 app = FastAPI()
 
@@ -18,5 +19,7 @@ async def get_books():
 
 
 @app.post('/books')
-async def create_book(body: ValidateBook):
-    BOOKS.append(body)
+async def create_book(request_data: ValidateBook):
+    request_data = reform_to_book_class(request_data)
+    request_data = assign_book_id(request_data, BOOKS)
+    BOOKS.append(request_data)

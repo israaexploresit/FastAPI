@@ -23,3 +23,9 @@ async def create_book(request_data: ValidateBook):
     request_data = reform_to_book_class(request_data)
     request_data = assign_book_id(request_data, BOOKS)
     BOOKS.append(request_data)
+
+
+@app.get('/books/{book_id}')
+async def get_book(book_id: int):
+    response = list(filter(lambda x: x.id == book_id, BOOKS))
+    return response

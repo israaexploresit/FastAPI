@@ -35,3 +35,17 @@ async def get_book(book_id: int):
 async def fetch_books_by_rating(rating: int):
     response = list(filter(lambda x: x.rating == rating, BOOKS))
     return response
+
+
+@app.put('/books/')
+async def update_book(request_data: ValidateBook):
+    for i in range(len(BOOKS)):
+        if BOOKS[i].id == request_data.id:
+            BOOKS[i] = request_data
+
+@app.delete('/books/{book_id}')
+async def delete_book(book_id: int):
+    for i in range(len(BOOKS)):
+        if BOOKS[i].id == book_id:
+            BOOKS.pop(i)
+            break

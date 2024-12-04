@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Path
+from fastapi import FastAPI, Path, Query
 from tutorial.models import Book
 from tutorial.validations import ValidateBook
 from tutorial.utils import reform_to_book_class, assign_book_id
@@ -32,7 +32,7 @@ async def get_book(book_id: int = Path(gt=0)):
 
 
 @app.get('/books/')
-async def fetch_books_by_rating(rating: int):
+async def fetch_books_by_rating(rating: int = Query(gt=0, lt=6)):
     response = list(filter(lambda x: x.rating == rating, BOOKS))
     return response
 

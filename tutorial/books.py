@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Path
 from tutorial.models import Book
 from tutorial.validations import ValidateBook
 from tutorial.utils import reform_to_book_class, assign_book_id
@@ -26,7 +26,7 @@ async def create_book(request_data: ValidateBook):
 
 
 @app.get('/books/{book_id}')
-async def get_book(book_id: int):
+async def get_book(book_id: int = Path(gt=0)):
     response = list(filter(lambda x: x.id == book_id, BOOKS))
     return response
 
@@ -44,7 +44,7 @@ async def update_book(request_data: ValidateBook):
             BOOKS[i] = request_data
 
 @app.delete('/books/{book_id}')
-async def delete_book(book_id: int):
+async def delete_book(book_id: int = Path(gt=0)):
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book_id:
             BOOKS.pop(i)

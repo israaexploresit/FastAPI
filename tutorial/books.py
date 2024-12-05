@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, Path, Query, HTTPException
 from tutorial.models import Book
 from tutorial.validations import ValidateBook
 from tutorial.utils import reform_to_book_class, assign_book_id
@@ -28,6 +28,8 @@ async def create_book(request_data: ValidateBook):
 @app.get('/books/{book_id}')
 async def get_book(book_id: int = Path(gt=0)):
     response = list(filter(lambda x: x.id == book_id, BOOKS))
+    if not response:
+        raise HTTPException(status_code=404, detail='Book not found')
     return response
 
 
@@ -39,13 +41,22 @@ async def fetch_books_by_rating(rating: int = Query(gt=0, lt=6)):
 
 @app.put('/books/')
 async def update_book(request_data: ValidateBook):
+    is_book_updated = False
     for i in range(len(BOOKS)):
         if BOOKS[i].id == request_data.id:
             BOOKS[i] = request_data
+            is_book_updated = True
+    if not is_book_updated:
+        raise HTTPException(status_code=404, detail='Book not found')
+
 
 @app.delete('/books/{book_id}')
 async def delete_book(book_id: int = Path(gt=0)):
+    is_book_deleted = False
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book_id:
             BOOKS.pop(i)
+            is_book_deleted = True
             break
+    if not is_book_deleted:
+        raise HTTPException(status_code=404, detail='Book not found')

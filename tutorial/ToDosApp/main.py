@@ -2,6 +2,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, Depends, HTTPException, Path
 from starlette import status
+from pydantic import BaseModel, Field
 
 from database import engine, SessionLocal
 from models import ToDo
@@ -23,14 +24,28 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
+class CreateToDo(BaseModel):
+    title: str = Field(min_length=3)
+    description: str = Field(min_length=3, max_length=100)
+    priority: int = Field(gt=0)
+    is_completed: bool = Field(default=False)
+
+
 @app.get('/todos')
-async def list_books(db: db_dependency):
+async def list_todos(db: db_dependency):
     return db.query(ToDo).all()
 
 
 @app.get('/todos/{todo_id}', status_code=status.HTTP_200_OK)
-async def get_book(db: db_dependency, todo_id: int = Path(gt=0)):
+async def get_todo(db: db_dependency, todo_id: int = Path(gt=0)):
     response = db.query(ToDo).filter(ToDo.id == todo_id).first()
     if response:
         return response
     raise HTTPException(status_code=404, detail='ToDo not found')
+
+
+@app.post('/todos', status_code=status.HTTP_201_CREATED)
+async def create_todo(db: db_dependency, request_data: CreateToDo):
+    todo_obj = ToDo(**request_data.model_dump())
+    db.add(todo_obj)
+    db.commit()

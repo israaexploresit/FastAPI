@@ -7,8 +7,11 @@ from pydantic import BaseModel, Field
 from database import engine, SessionLocal
 from models import ToDo
 import models
+from routers import auth
+
 
 app = FastAPI()
+app.include_router(auth.router)
 
 models.Base.metadata.create_all(bind=engine)
 

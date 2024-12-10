@@ -31,7 +31,7 @@ pip install "python-jose[cryptography]"
 SECRET_KEY = '4c9131431e44e8b0a46750919a50db10ab2b149f77f7df790da4acc80bac10f4'
 ALGORITHM = 'HS256'
 
-oauth2bearer = OAuth2PasswordBearer(tokenUrl='token')
+oauth2bearer = OAuth2PasswordBearer(tokenUrl='auth/login/')
 
 def get_db():
     db = SessionLocal()

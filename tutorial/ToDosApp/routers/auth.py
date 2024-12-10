@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -5,13 +6,27 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
+from jose import jwt
 
 from models import User
 from database import SessionLocal
 
 router = APIRouter()
 
+'''
+For password hashing:
+pip install passlib bcrypt==4.0.1
+'''
+
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+
+'''
+For JWT Encoding:
+pip install "python-jose[cryptography]"
+'''
+
+SECRET_KEY = '4c9131431e44e8b0a46750919a50db10ab2b149f77f7df790da4acc80bac10f4'
+ALGORITHM = 'HS256'
 
 
 def get_db():
@@ -34,13 +49,25 @@ class CreateUserRequest(BaseModel):
     password: str
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 def authenticate_user(username, password, db):
     user_query = db.query(User).filter(User.username == username).first()
     if not user_query:
         return False
     if not bcrypt_context.verify(password, user_query.hashed_password):
         return False
-    return True
+    return user_query
+
+
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encode = {'sub': username, 'id': user_id}
+    expires = datetime.now(timezone.utc) + expires_delta
+    encode.update({'exp': expires})
+    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 @router.post('/auth/', status_code=status.HTTP_201_CREATED)
@@ -60,12 +87,13 @@ async def create_user(
     return user_obj
 
 
-@router.post('/login', status_code=status.HTTP_200_OK)
+@router.post('/login', status_code=status.HTTP_200_OK, response_model=Token)
 async def login_for_access_token(
                 db: db_dependency,
                 form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user_authenticated = authenticate_user(form_data.username,
-                                           form_data.password, db)
-    if not user_authenticated:
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
         return {'mesaage': 'Failed authentication'}
-    return {'message': 'Successful authentication'}
+
+    token = create_access_token(user.username, user.id, timedelta(minutes=30))
+    return {'access_token': token, 'token_type': 'bearer'}

@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from starlette import status
-from jose import jwt
+from jose import jwt, JWTError
 
 from models import User
 from database import SessionLocal
@@ -28,6 +28,7 @@ pip install "python-jose[cryptography]"
 SECRET_KEY = '4c9131431e44e8b0a46750919a50db10ab2b149f77f7df790da4acc80bac10f4'
 ALGORITHM = 'HS256'
 
+oauth2bearer = OAuth2PasswordBearer(tokenUrl='token')
 
 def get_db():
     db = SessionLocal()
@@ -85,6 +86,19 @@ async def create_user(
     db.add(user_obj)
     db.commit()
     return user_obj
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2bearer)]):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get('sub')
+        user_id = payload.get('id')
+        if username is None or user_id is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Invalid credentials')
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Invalid credentials')
 
 
 @router.post('/login', status_code=status.HTTP_200_OK, response_model=Token)

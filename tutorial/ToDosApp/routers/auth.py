@@ -11,7 +11,10 @@ from jose import jwt, JWTError
 from models import User
 from database import SessionLocal
 
-router = APIRouter()
+router = APIRouter(
+    prefix='/auth',
+    tags=['auth']
+)
 
 '''
 For password hashing:
@@ -71,7 +74,7 @@ def create_access_token(username: str, user_id: int, expires_delta: timedelta):
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-@router.post('/auth/', status_code=status.HTTP_201_CREATED)
+@router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(
                 db: db_dependency,
                 request_data: CreateUserRequest):
@@ -107,7 +110,8 @@ async def login_for_access_token(
                 form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        return {'mesaage': 'Failed authentication'}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Invalid credentials')
 
     token = create_access_token(user.username, user.id, timedelta(minutes=30))
     return {'access_token': token, 'token_type': 'bearer'}

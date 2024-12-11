@@ -32,8 +32,8 @@ class ToDoData(BaseModel):
 
 
 @router.get('/todos')
-async def list_todos(db: db_dependency):
-    return db.query(ToDo).all()
+async def list_todos(db: db_dependency, user: user_dependency):
+    return db.query(ToDo).filter(ToDo.owner_id == user.get('id')).all()
 
 
 @router.get('/todos/{todo_id}', status_code=status.HTTP_200_OK)

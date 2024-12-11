@@ -33,12 +33,18 @@ class ToDoData(BaseModel):
 
 @router.get('/todos')
 async def list_todos(db: db_dependency, user: user_dependency):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
     return db.query(ToDo).filter(ToDo.owner_id == user.get('id')).all()
 
 
 @router.get('/todos/{todo_id}', status_code=status.HTTP_200_OK)
-async def get_todo(db: db_dependency, todo_id: int = Path(gt=0)):
-    response = db.query(ToDo).filter(ToDo.id == todo_id).first()
+async def get_todo(user: user_dependency,
+                   db: db_dependency, todo_id: int = Path(gt=0)):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    response = db.query(ToDo).filter(ToDo.id == todo_id)\
+                             .filter(ToDo.owner_id == user.get('id')).first()
     if response:
         return response
     raise HTTPException(status_code=404, detail='ToDo not found')
@@ -56,10 +62,13 @@ async def create_todo(db: db_dependency,
 
 
 @router.put('/todos/{todo_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def update_todo(db: db_dependency,
+async def update_todo(db: db_dependency, user: user_dependency,
                       request_data: ToDoData,
                       todo_id: int = Path(gt=0)):
-    todo_obj = db.query(ToDo).filter(ToDo.id == todo_id).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    todo_obj = db.query(ToDo).filter(ToDo.id == todo_id)\
+                             .filter(ToDo.owner_id == user.get('id')).first()
     if not todo_obj:
         raise HTTPException(status_code=404, detail='ToDo not found')
     todo_obj.title = request_data.title
@@ -71,9 +80,12 @@ async def update_todo(db: db_dependency,
 
 
 @router.delete('/todos/{todo_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(db: db_dependency,
+async def delete_todo(db: db_dependency, user: user_dependency,
                       todo_id: int = Path(gt=0)):
-    todo_objs = db.query(ToDo).filter(ToDo.id == todo_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    todo_objs = db.query(ToDo).filter(ToDo.id == todo_id)\
+                              .filter(ToDo.owner_id == user.get('id'))
     if not todo_objs.first():
         raise HTTPException(status_code=404, detail='ToDo not found')
     todo_objs.delete()

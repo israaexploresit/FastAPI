@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from database import SessionLocal
 from models import ToDo
+from routers.auth import get_current_user
 
 
 router = APIRouter()
@@ -20,6 +21,7 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 class ToDoData(BaseModel):
@@ -43,8 +45,12 @@ async def get_todo(db: db_dependency, todo_id: int = Path(gt=0)):
 
 
 @router.post('/todos', status_code=status.HTTP_201_CREATED)
-async def create_todo(db: db_dependency, request_data: ToDoData):
-    todo_obj = ToDo(**request_data.model_dump())
+async def create_todo(db: db_dependency,
+                      user: user_dependency,
+                      request_data: ToDoData):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    todo_obj = ToDo(**request_data.model_dump(), owner_id=user.get('id'))
     db.add(todo_obj)
     db.commit()
 

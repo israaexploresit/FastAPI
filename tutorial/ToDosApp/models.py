@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from database import Base
 
 
@@ -23,3 +23,4 @@ class ToDo(Base):
     description = Column(String)
     priority = Column(Integer)
     is_completed = Column(Boolean, default=False)
+    owner_id = Column(Integer, ForeignKey('users.id'))
